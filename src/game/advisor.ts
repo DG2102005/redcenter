@@ -398,9 +398,10 @@ export function buildHandFromCodes(codes: string[]): Tile[] {
 // 目标: 最快听牌、最早自摸、进张最多(去重统计, 计入各家已见)
 export function analysisFromHandCodes(
   handCodes: string[],
+  meldCount = 0,
   allDiscards: string[] = [],
 ): ScenarioAnalysis {
-  const meldsCount = 0;
+  const meldsCount = meldCount;
   const hand = buildHandFromCodes(handCodes);
 
   // 当前向听数(精确: 平胡/七小对取min, 红中百搭)
@@ -531,6 +532,10 @@ export function analysisFromHandCodes(
       categoryCount,
       tileCount,
       expectedValue,
+      score: expectedValue, // 兼容旧调用方(题库编辑器)
+      incomingNames: afterShanten === 0
+        ? tingTiles.map((c) => tileName(indexToTile(ALL_CODES.indexOf(c))))
+        : improvements.map((x) => tileName(indexToTile(ALL_CODES.indexOf(x.code)))),
       dangerLevel: 0,
       reasoning,
     });

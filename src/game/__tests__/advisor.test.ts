@@ -51,7 +51,7 @@ describe('analysisFromHandCodes', () => {
   it('returns sorted scenarios with the best discard first', () => {
     // 14 tiles: 1m2m3m 4m5m6m 7m8m9m 1p2p3p 5m5m — winning hand
     const codes = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','p1','p2','p3','p5','p5'];
-    const analysis = analysisFromHandCodes(codes, []);
+    const analysis = analysisFromHandCodes(codes, 0, []);
     expect(analysis.currentShanten).toBe(-1);
     expect(analysis.scenarios.length).toBeGreaterThan(0);
   });
@@ -59,7 +59,7 @@ describe('analysisFromHandCodes', () => {
   it('recommends safe terminal/honor tiles over middle tiles in a far hand', () => {
     // Far from ready: mix of honors and terminals
     const codes = ['z1','z2','z3','z4','m1','m9','p1','p9','s1','s9','m2','m3','p2','p3'];
-    const analysis = analysisFromHandCodes(codes, []);
+    const analysis = analysisFromHandCodes(codes, 0, []);
     const best = analysis.scenarios[0];
     // Best should be a terminal/honor with relatively low danger
     expect(best).toBeDefined();
@@ -68,7 +68,7 @@ describe('analysisFromHandCodes', () => {
 
   it('includes improvement tiles in each scenario', () => {
     const codes = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','p1','p2','p5','p5','z1'];
-    const analysis = analysisFromHandCodes(codes, []);
+    const analysis = analysisFromHandCodes(codes, 0, []);
     const best = analysis.scenarios[0];
     expect(best.improvementCodes.length).toBeGreaterThan(0);
     expect(best.incomingNames.length).toBe(best.improvementCodes.length);
@@ -76,7 +76,7 @@ describe('analysisFromHandCodes', () => {
 
   it('never includes hongzhong as a discard option', () => {
     const codes = ['z5','m1','m2','m3','m4','m5','m6','m7','m8','m9','p1','p2','p3','p4'];
-    const analysis = analysisFromHandCodes(codes, []);
+    const analysis = analysisFromHandCodes(codes, 0, []);
     const hzScenario = analysis.scenarios.find((s) => s.discardCode === 'z5');
     const nonHzBest = analysis.scenarios[0];
     expect(hzScenario).toBeUndefined();

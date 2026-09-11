@@ -1,9 +1,12 @@
 // 游戏引擎: 状态机与回合控制
 import type {
-  GameState, PlayerState, Seat, Tile, ActionOption, Meld, Phase, LogEntry, UserDecomposition, DecompositionBlock,
+  GameState, PlayerState, Seat, Tile, ActionOption, Meld, UserDecomposition, DecompositionBlock,
 } from './types';
-import { tileCode, isHongZhong, tileName, SEAT_NAME } from './types';
+import { tileCode, tileName, SEAT_NAME } from './types';
 import { dealWithCheck, initPlayers } from './deal';
+import { buildDeck } from './tile';
+import { shuffle } from './shuffle';
+import { indexToTile } from './types';
 import { sortHand } from './sort';
 import { canWin, checkTing } from './win';
 import {
@@ -251,6 +254,60 @@ export function startNewRound(state: GameState, banker?: Seat): GameState {
   // 庄家自检暗杠/补杠(开局扫描全部手牌)
   s.selfActions = getAllSelfActions(s.players[b]);
   // 若人类是庄家，开局即给出建议
+  if (b === HUMAN_SEAT) {
+    s.lastAdvice = buildAdvice(s, b);
+  }
+  return s;
+}
+
+// 自选手牌开局(模拟对弈): 人类自选14张牌, AI正常从牌池发13张
+export function startCustomRound(state: GameState, humanCodes: string[], banker?: Seat): GameState {
+  const s = createInitialState();
+  s.round = state.round + 1;
+  resetLog();
+  const b: Seat = banker ?? HUMAN_SEAT;
+  s.banker = b;
+
+  // 拼一个完整牌库: 先按人类所选牌序, 从牌库中取出对应牌的真实实例(每张id唯一),
+  // 与"开始游戏"的随机发牌完全一致, 避免 id 重复导致出牌/点名错乱
+  const fullDeck = shuffle(buildDeck());
+  const count: Record<string, number> = {};
+  for (const c of humanCodes) count[c] = (count[c] || 0) + 1;
+  let humanHand: Tile[] = [];
+  const remaining: typeof fullDeck = [];
+  for (const t of fullDeck) {
+    const code = tileCode(t);
+    if ((count[code] || 0) > 0) {
+      count[code]--;
+      humanHand.push(t);
+    } else {
+      remaining.push(t);
+    }
+  }
+  humanHand = sortHand(humanHand);
+
+  // 给AI发13张
+  const hands: Tile[][] = [[], [], [], []];
+  hands[HUMAN_SEAT] = humanHand;
+  let ptr = 0;
+  for (let i = 0; i < 4; i++) {
+    const seat = i as Seat;
+    if (seat === HUMAN_SEAT) continue;
+    hands[seat] = remaining.slice(ptr, ptr + 13);
+    ptr += 13;
+  }
+  s.deck = remaining.slice(ptr);
+  s.wallTailIndex = s.deck.length - 1;
+  s.players = initPlayers(hands, b);
+  s.currentSeat = b;
+  s.isFirstRound = true;
+  s.phase = 'discard';
+  addLog(s.log, 'system', `第${s.round}局开始(自选手牌)`, `庄家:${SEAT_NAME[b]}`);
+  for (let i = 0; i < 4; i++) {
+    const p = s.players[i];
+    addLog(s.log, p.seat, '发牌', p.hand.map((t) => tileName(t)).join(' '));
+  }
+  s.selfActions = getAllSelfActions(s.players[b]);
   if (b === HUMAN_SEAT) {
     s.lastAdvice = buildAdvice(s, b);
   }

@@ -176,7 +176,7 @@ export function getQiangGangActions(
   if (player.hand.length === 0) return [];
   const test = player.hand.concat(tile);
   if (canWin(test, player.melds.length)) {
-    return [{ type: 'hu', tile, seat: player.seat, meld: null }];
+    return [{ type: 'hu', tile, seat: player.seat }];
   }
   return [];
 }

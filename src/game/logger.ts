@@ -1,5 +1,5 @@
 // 对局日志系统
-import type { LogEntry, GameState, Seat } from './types';
+import type { LogEntry, GameState, Seat, Tile } from './types';
 import { tileName, SEAT_NAME } from './types';
 
 let logCounter = 0;
@@ -50,6 +50,6 @@ export function exportLog(state: GameState): string {
 }
 
 // 工具: 牌名拼接
-export function handNames(tiles: { suit: string; rank: number }[]): string {
-  return tiles.map((t) => tileName(t as any)).join(' ');
+export function handNames(tiles: Tile[]): string {
+  return tiles.map((t) => tileName(t)).join(' ');
 }

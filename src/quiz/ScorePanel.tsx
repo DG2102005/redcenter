@@ -9,7 +9,6 @@ import {
   loadScore, saveScore, resetRoundScore, resetAllScore,
 } from '../game/scoring';
 import type { ScoreDraw, ScoreState, ScoreSettleKind } from '../game/scoring';
-import { codeName } from '../game/skillEngine';
 import { Tile as TileComp } from '../components/Tile';
 import type { Tile, Suit, GangEvent } from '../game/types';
 import { SEAT_NAME } from '../game/types';
@@ -23,8 +22,8 @@ function codeToTile(code: string): Tile {
 function gangLabel(ev: GangEvent): string {
   const gangSeatName = SEAT_NAME[ev.gangSeat];
   const typeName = ev.type === 'angang' ? '暗杠' : ev.type === 'minggang' ? '明杠' : '补杠';
-  if (ev.seat === ev.gangSeat) return `你${typeName}得 <b style="color:#2ecc71">+${ev.delta}</b>`;
-  return `${gangSeatName}家${typeName},你 <b style="color:#e74c3c">${ev.delta}</b>`;
+  if (ev.seat === ev.gangSeat) return `你${typeName}得 +${ev.delta}`;
+  return `${gangSeatName}家${typeName},你 ${ev.delta}`;
 }
 
 // 积分状态 hook(对弈/模拟共用同一份 localStorage 数据)
@@ -104,7 +103,9 @@ export function ScorePanel({ score, result, gangEvent, onResetRound, onResetAll 
         {gangEvent && (
           <div className="score-detail">
             <span>🀄 杠分:</span>
-            <span dangerouslySetInnerHTML={{ __html: gangLabel(gangEvent) }} />
+            <span className={gangEvent.seat === gangEvent.gangSeat ? 'score-pos' : 'score-neg'}>
+              {gangLabel(gangEvent)}
+            </span>
           </div>
         )}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -137,17 +138,17 @@ export function ScorePanel({ score, result, gangEvent, onResetRound, onResetAll 
             </span>
           ))}
           <span>
-            S=<b style={{ color: '#2ecc71' }}>{detail.total}</b>
+            S=<b style={{ color: 'var(--success-bright)' }}>{detail.total}</b>
             {(() => {
               switch (result?.kind) {
                 case 'win':
-                  return <>自摸赢 <b style={{ color: '#2ecc71' }}>3×{detail.total}={detail.winnerGain}</b>, 三家各扣 {detail.loserPay}</>;
+                  return <>自摸赢 <b style={{ color: 'var(--success-bright)' }}>3×{detail.total}={detail.winnerGain}</b>, 三家各扣 {detail.loserPay}</>;
                 case 'qianggang':
-                  return <>抢杠胡!<b style={{ color: '#2ecc71' }}>+{detail.winnerGain}</b> (被抢者赔付)</>;
+                  return <>抢杠胡!<b style={{ color: 'var(--success-bright)' }}>+{detail.winnerGain}</b> (被抢者赔付)</>;
                 case 'beRobbed':
-                  return <>被抢杠!损失 <b style={{ color: '#e74c3c' }}>-{detail.winnerGain}</b> (抢杠者得 {detail.winnerGain})</>;
+                  return <>被抢杠!损失 <b style={{ color: 'var(--danger)' }}>-{detail.winnerGain}</b> (抢杠者得 {detail.winnerGain})</>;
                 default:
-                  return <>被扣 <b style={{ color: '#e74c3c' }}>-{detail.loserPay}</b> (自摸者得 {detail.winnerGain})</>;
+                  return <>被扣 <b style={{ color: 'var(--danger)' }}>-{detail.loserPay}</b> (自摸者得 {detail.winnerGain})</>;
               }
             })()}
           </span>

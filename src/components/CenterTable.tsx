@@ -1,5 +1,5 @@
 // 中央牌桌: 各家舍牌放在自己面前行式排布, 完整显示, 互不遮盖
-import type { GameState, Seat } from '../game/types';
+import type { GameState, Seat, Tile as TileType } from '../game/types';
 import { Tile } from './Tile';
 
 interface Props {
@@ -16,7 +16,7 @@ function DiscardZone({
   highlightId,
   showLabel,
 }: {
-  tiles: { id: number; suit: string; rank: number }[];
+  tiles: TileType[];
   direction: 'top' | 'bottom' | 'left' | 'right';
   highlightId: number | null;
   showLabel?: boolean;
@@ -24,7 +24,7 @@ function DiscardZone({
   if (tiles.length === 0) return <div className={`discard-zone discard-${direction} empty`} />;
   // 上下方位每行10张, 左右方位每行5张(窄区)
   const per = direction === 'left' || direction === 'right' ? 5 : 10;
-  const rows: { id: number; suit: string; rank: number }[][] = [];
+  const rows: TileType[][] = [];
   for (let i = 0; i < tiles.length; i += per) {
     rows.push(tiles.slice(i, i + per));
   }
@@ -35,7 +35,7 @@ function DiscardZone({
           {row.map((t) => (
             <Tile
               key={t.id}
-              tile={t as any}
+              tile={t}
               size={DISCARD_SIZE}
               highlight={t.id === highlightId}
               showLabel={showLabel}
@@ -81,9 +81,10 @@ export function CenterTable({ state, showLabel }: Props) {
             />
           </div>
           <div className="grid-center">
-            <div className="table-logo">
-              <div className="logo-text">推倒胡</div>
-              <div className="logo-sub">红中百搭</div>
+            <div className="table-center-mark" aria-hidden="true">
+              <span className="mark-ring mark-ring-outer" />
+              <span className="mark-ring mark-ring-inner" />
+              <span className="mark-char">中</span>
             </div>
           </div>
           <div className="grid-right">

@@ -577,7 +577,9 @@
   line-height: 1.1;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-.score-panel-value.cum { color: #2ecc71; }
+.score-panel-value.cum { color: var(--success-bright); }
+.score-pos { color: var(--success-bright); font-weight: 700; }
+.score-neg { color: var(--danger); font-weight: 700; }
 .score-panel-sub { font-size: 11px; color: var(--text-dim); }
 .score-detail {
   font-size: 13px;
@@ -1088,3 +1090,20 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ===== 选牌开局 (AI对弈内嵌) ===== */
+.picker-card { max-width: 640px; width: 94vw; }
+.picker-tip { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+.picker-suit {
+  width: 24px;
+  font-size: 14px;
+  color: var(--gold);
+  align-self: flex-end;
+  margin-right: 4px;
+  font-weight: 600;
+}
+.picker-hand-tile {
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.picker-hand-tile:hover { transform: translateY(-4px); opacity: 0.7; }

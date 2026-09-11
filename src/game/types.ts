@@ -105,6 +105,12 @@ export interface GameState {
   // 撤销/重做历史
   history: HistoryEntry[];       // 历史状态快照栈
   historyIndex: number;          // 当前历史索引(指向当前状态, -1表示无历史)
+  // 辅助训练相关
+  drawnTileId: number | null;   // 当前轮次新摸的牌id(高亮+不参与理牌)
+  lastAdvice: AdviceData | null;  // 当前给人类的最优打法建议
+  lastMistake: MistakeAlert | null;  // 上一次失误提醒
+  review: ReviewReport | null;  // 局终复盘报告
+  lastCorrection?: UserCorrection | null;  // 最近一次校正记录(UI展示用)
 }
 
 // 牌型分解块类型
@@ -298,6 +304,8 @@ export interface DiscardScenario {
   categoryCount: number;       // 进张门数(几种不同的牌)
   tileCount: number;           // 进张总张数
   expectedValue: number;       // 期望价值评分
+  score: number;               // 期望价值(兼容题库编辑器)
+  incomingNames: string[];     // 进张/可胡的中文名(兼容题库编辑器)
   dangerLevel: number;         // 危险度 0=安全 1=中 2=高
   reasoning: string;           // 推荐理由
 }

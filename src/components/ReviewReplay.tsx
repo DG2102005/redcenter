@@ -14,6 +14,29 @@ interface Props {
   onPlayFrom: (state: SavedRound['state'], label: string) => void; // 从某节点继续演绎
 }
 
+const TYPE_CN: Record<string, string> = {
+  hu: '自摸胡',
+  peng: '碰',
+  gang: '杠',
+  minggang: '明杠',
+  angang: '暗杠',
+  bugang: '补杠',
+  discard: '出牌',
+};
+
+const CODE_RE = /\b(m[1-9]|p[1-9]|s[1-9]|z[1-7])\b/g;
+
+// 历史动作标签中的牌代号 → 具体牌名(兼容历史收藏数据); 动作类型 → 中文
+function prettyLabel(label: string): string {
+  let s = label;
+  for (const [k, v] of Object.entries(TYPE_CN)) {
+    s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), v);
+  }
+  return s.replace(CODE_RE, (m) =>
+    tileName({ id: -1, suit: m[0] as TileType['suit'], rank: parseInt(m.slice(1), 10) }),
+  );
+}
+
 export function ReviewReplay({ rounds, onReload, onPlayFrom }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [nodeIdx, setNodeIdx] = useState(0);
@@ -83,7 +106,7 @@ export function ReviewReplay({ rounds, onReload, onPlayFrom }: Props) {
                         className={`timeline-node${nodeIdx === i ? ' active' : ''}`}
                         onClick={(e) => { e.stopPropagation(); setNodeIdx(i); }}
                       >
-                        {i === 0 ? '开局' : n.label}
+                        {i === 0 ? '开局' : prettyLabel(n.label)}
                       </button>
                     ))}
                   </div>
@@ -96,7 +119,7 @@ export function ReviewReplay({ rounds, onReload, onPlayFrom }: Props) {
                     return (
                       <div className="replay-node-state">
                         <div className="replay-node-label">
-                          {`第${nodeIdx + 1}步 · ${n.label}`}
+                          {`第${nodeIdx + 1}步 · ${prettyLabel(n.label)}`}
                         </div>
                         {human && (
                           <>
@@ -136,7 +159,7 @@ export function ReviewReplay({ rounds, onReload, onPlayFrom }: Props) {
                       onClick={(e) => {
                         e.stopPropagation();
                         const n = nodes[nodeIdx];
-                        if (n) onPlayFrom(n.state, `${selected.round}局 · ${n.label}`);
+                        if (n && selected) onPlayFrom(n.state, `${selected.round}局 · ${n.label}`);
                       }}
                       title="从该节点开始自由演绎不同打法"
                     >

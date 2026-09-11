@@ -56,9 +56,6 @@ export const TILE_FILE_MAP: Record<TileCode, string> = {
   z7: '白板.png',
 };
 
-// 牌背图片(统一绿色背面)
-export const TILE_BACK_URL = '/tiles/tile_back.png';
-
 // 根据牌型代码获取图片URL(已编码)
 export function getTileUrl(code: TileCode): string {
   const file = TILE_FILE_MAP[code];

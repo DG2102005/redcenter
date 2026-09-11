@@ -38,7 +38,7 @@ export function PlayerSeat({ player, state, position, showLabel }: Props) {
         {isGameOver ? (
           sortedHand.map((t, i) => (
             <div
-              key={`gameover-${player.seat}-${i}`}
+              key={`gameover-${player.seat}-${t.id}`}
               className="flip-card"
               style={{ animationDelay: `${i * 50}ms` }}
             >
@@ -56,8 +56,8 @@ export function PlayerSeat({ player, state, position, showLabel }: Props) {
             </div>
           ))
         ) : (
-          Array.from({ length: handCount }).map((_, i) => (
-            <TileBack key={i} size={size} />
+          player.hand.map((t, i) => (
+            <TileBack key={`hand-${player.seat}-${t.id}`} size={size} />
           ))
         )}
       </div>

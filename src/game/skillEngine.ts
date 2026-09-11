@@ -16,6 +16,12 @@
 
 export const LAIZI = 50;
 
+// 展示顺序(与手牌摆放一致: 万→筒→条→字, 各花色按点数升序, 字牌按 东南西北中发白)
+const DISPLAY_ORDER: Record<string, number> = { m: 0, p: 1, s: 2, z: 3 };
+function displayOrder(code: string): number {
+  return DISPLAY_ORDER[code[0]] * 100 + parseInt(code.slice(1), 10);
+}
+
 const SUIT_BASE: Record<string, number> = { m: 0, p: 10, s: 20 };
 const ZI_OF: Record<string, number> = { z1: 31, z2: 32, z3: 33, z4: 34, z5: 50, z6: 36, z7: 37 };
 const ZI_NAME: Record<number, string> = { 31: '东', 32: '南', 33: '西', 34: '北', 35: '中', 36: '发', 37: '白' };
@@ -371,7 +377,7 @@ function remaining(counts13: Counts, laizi13: number, sc: number, seen?: Counts)
   return 4 - (counts13[sc] ?? 0) - seenN;
 }
 
-// 已听牌(向听 0)：返回可胡的牌列表(按剩余张数降序)
+// 已听牌(向听 0)：返回可胡的牌列表(按手牌摆放顺序)
 export function winningTiles(counts13: Counts, laizi13: number, melds = 0, seen?: Counts): TileRemain[] {
   const wins: TileRemain[] = [];
   for (const sc of ALL_TILES) {
@@ -390,7 +396,7 @@ export function winningTiles(counts13: Counts, laizi13: number, melds = 0, seen?
       if (r > 0) wins.push({ code: fromSkillCode(sc), name: skillName(sc), remain: r });
     }
   }
-  wins.sort((a, b) => b.remain - a.remain || toSkillCode(a.code) - toSkillCode(b.code));
+  wins.sort((a, b) => displayOrder(a.code) - displayOrder(b.code));
   return wins;
 }
 
@@ -418,7 +424,7 @@ export function advancingTiles(counts13: Counts, laizi13: number, s: number, mel
     }
     if (found) adv.push({ code: fromSkillCode(sc), name: skillName(sc), remain: remaining(counts13, laizi13, sc, seen) });
   }
-  adv.sort((a, b) => b.remain - a.remain || toSkillCode(a.code) - toSkillCode(b.code));
+  adv.sort((a, b) => displayOrder(a.code) - displayOrder(b.code));
   return adv;
 }
 

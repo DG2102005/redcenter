@@ -1,5 +1,5 @@
 // 根组件: 麻将桌面布局与交互
-// 顶部导航: 对弈 / 智能模拟 / 收藏复盘; 侧栏: 信息 / 辅助
+// 顶部导航: 对弈 / 收藏复盘; 侧栏: 信息 / 辅助
 import { useMemo, useState, useCallback } from 'react';
 import { useGame } from './hooks/useGame';
 import { HUMAN_SEAT } from './game/constants';
@@ -11,13 +11,13 @@ import { MeldArea } from './components/MeldArea';
 import { ActionPanel } from './components/ActionPanel';
 import { GameInfo } from './components/GameInfo';
 import { AdvisorTab } from './components/AdvisorTab';
-import { Simulator } from './quiz/Simulator';
+import { HandPicker } from './components/HandPicker';
 import { ReviewReplay } from './components/ReviewReplay';
 import { loadSavedRounds } from './game/savedRounds';
 import type { SavedRound } from './game/savedRounds';
 import { saveRound } from './game/savedRounds';
 
-type View = 'game' | 'simulate' | 'review';
+type View = 'game' | 'review';
 type SideTab = 'info' | 'advisor';
 
 function App() {
@@ -26,8 +26,9 @@ function App() {
   const [sideTab, setSideTab] = useState<SideTab>('info');
   const [savedRounds, setSavedRounds] = useState<SavedRound[]>(() => loadSavedRounds());
   const [replayHint, setReplayHint] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
 
-  // 切回对弈时同步最新积分(模拟页可能已加分)
+  // 切回对弈时同步最新积分; 切到复盘时刷新收藏列表
   const switchView = (v: View) => {
     if (v === 'game') game.scoreReload();
     if (v === 'review') setSavedRounds(loadSavedRounds());
@@ -47,7 +48,7 @@ function App() {
   }, [game.state]);
 
   const {
-    state, startGame, newRound, humanDiscard, humanReact, humanPass, humanSelfAction, humanPassSelf,
+    state, startGame, startCustomGame, newRound, humanDiscard, humanReact, humanPass, humanSelfAction, humanPassSelf,
     scoreState, scoreResult, scoreGangEvent, scoreResetRound, scoreResetAll,
   } = game;
 
@@ -83,35 +84,37 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🀄 红中推倒胡麻将训练工具</h1>
+        <h1 className="brand">
+          <span className="brand-mark">中</span>
+          <span className="brand-name">红中推倒胡</span>
+          <span className="brand-sub">训练工具</span>
+        </h1>
         <div className="header-controls">
           <nav className="nav-switch">
             <button
               className={`nav-btn ${view === 'game' ? 'active' : ''}`}
               onClick={() => switchView('game')}
             >
-              🀄 对弈
-            </button>
-            <button
-              className={`nav-btn ${view === 'simulate' ? 'active' : ''}`}
-              onClick={() => switchView('simulate')}
-            >
-              🧪 智能模拟
+              对弈
             </button>
             <button
               className={`nav-btn ${view === 'review' ? 'active' : ''}`}
               onClick={() => switchView('review')}
             >
-              📚 复盘
+              复盘
             </button>
           </nav>
           {view === 'game' && !started && (
-            <button className="start-btn" onClick={startGame}>开始游戏</button>
+            <>
+              <button className="start-btn" onClick={startGame}>开始对弈</button>
+              <button className="start-btn ghost" onClick={() => setShowPicker(true)}>选牌开局</button>
+            </>
           )}
           {view === 'game' && gameOver && (
             <>
               <button className="start-btn" onClick={newRound}>开始新一局</button>
-              <button className="start-btn" onClick={handleSaveRound}>💾 收藏本局</button>
+              <button className="start-btn ghost" onClick={() => setShowPicker(true)}>选牌开局</button>
+              <button className="start-btn ghost" onClick={handleSaveRound}>收藏本局</button>
             </>
           )}
         </div>
@@ -119,11 +122,7 @@ function App() {
 
       {replayHint && <div className="replay-hint">{replayHint}</div>}
 
-      {view === 'simulate' ? (
-        <div className="simulator-page">
-          <Simulator onBack={() => switchView('game')} />
-        </div>
-      ) : view === 'review' ? (
+      {view === 'review' ? (
         <div className="review-page">
           <ReviewReplay
             rounds={savedRounds}
@@ -162,7 +161,10 @@ function App() {
                     <div className="welcome-features">
                       ✓ 自动理牌 ✓ 逆时针出牌 ✓ 撤销重做 ✓ 牌型分解 ✓ 抢杠胡
                     </div>
-                    <button className="start-btn big" onClick={startGame}>开始游戏</button>
+                    <div className="welcome-actions">
+                      <button className="start-btn big" onClick={startGame}>开始对弈</button>
+                      <button className="start-btn big ghost" onClick={() => setShowPicker(true)}>选牌开局</button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -205,7 +207,7 @@ function App() {
                       onPass={humanPass} />
                   )}
                   {/* 撤销/重do 按钮 */}
-                  {canUndo || canRedo && (
+                  {(canUndo || canRedo) && (
                     <div className="action-undo-redo">
                       {canUndo && (
                         <button
@@ -239,20 +241,32 @@ function App() {
                 信息
               </button>
               <button className={`tab ${sideTab === 'advisor' ? 'active' : ''}`} onClick={() => setSideTab('advisor')}>
-                🧭 辅助
+                AI辅助
               </button>
             </div>
             <div className="tab-content">
               {sideTab === 'info' ? (
-                <GameInfo
-                  state={state}
-                  onNewRound={newRound}
-                  scoreState={scoreState}
-                  scoreResult={scoreResult}
-                  scoreGangEvent={scoreGangEvent}
-                  onResetRound={scoreResetRound}
-                  onResetAll={scoreResetAll}
-                />
+                started ? (
+                  <GameInfo
+                    state={state}
+                    onNewRound={newRound}
+                    scoreState={scoreState}
+                    scoreResult={scoreResult}
+                    scoreGangEvent={scoreGangEvent}
+                    onResetRound={scoreResetRound}
+                    onResetAll={scoreResetAll}
+                  />
+                ) : (
+                  <div className="game-idle-card">
+                    <div className="idle-card-title">对局规则</div>
+                    <ul className="idle-card-list">
+                      <li>红中为百搭，可代任意牌</li>
+                      <li>自摸胡牌 · 抢杠胡实时计分</li>
+                      <li>可撤销重做 · 支持牌型分解</li>
+                    </ul>
+                    <button className="start-btn" onClick={startGame}>开始对弈</button>
+                  </div>
+                )
               ) : (
                 started && human ? (
                   <AdvisorTab
@@ -269,6 +283,16 @@ function App() {
             </div>
           </aside>
         </div>
+      )}
+
+      {showPicker && (
+        <HandPicker
+          onClose={() => setShowPicker(false)}
+          onStart={(codes) => {
+            startCustomGame(codes);
+            setShowPicker(false);
+          }}
+        />
       )}
     </div>
   );

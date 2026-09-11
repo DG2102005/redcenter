@@ -1,10 +1,10 @@
 // 游戏状态Hook: 管理状态 + 驱动AI自动行动
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { GameState, ActionOption, Seat } from '../game/types';
-import { tileCode } from '../game/types';
+import { tileCode, tileName } from '../game/types';
 import { HUMAN_SEAT, AI_THINK_DELAY } from '../game/constants';
 import {
-  createInitialState, startNewRound, drawTile, discardTile,
+  createInitialState, startNewRound, startCustomRound, drawTile, discardTile,
   applyAction, applySelfAction, humanPassReact, humanPassSelfAction, aiPlayTurn,
   pushHistory, popHistory, redoHistory,
 } from '../game/gameEngine';
@@ -17,6 +17,15 @@ import { useScore } from '../quiz/ScorePanel';
 interface PendingSettle {
   kind: ScoreSettleKind;
   draw: ScoreDraw;
+}
+
+// 历史动作的中文标签(供复盘时间线展示)
+function historyLabel(option: ActionOption, qianggang: boolean): string {
+  const typeCn =
+    option.type === 'hu'
+      ? qianggang ? '抢杠胡' : '自摸胡'
+      : ({ peng: '碰', minggang: '明杠', angang: '暗杠', bugang: '补杠' } as Record<string, string>)[option.type] ?? option.type;
+  return option.tile ? `${typeCn} ${tileName(option.tile)}` : typeCn;
 }
 
 export function useGame() {
@@ -104,6 +113,10 @@ export function useGame() {
     setState((prev) => startNewRound(prev, HUMAN_SEAT));
   }, []);
 
+  const startCustomGame = useCallback((codes: string[]) => {
+    setState((prev) => startCustomRound(prev, codes, HUMAN_SEAT));
+  }, []);
+
   const newRound = useCallback(() => {
     setState((prev) => {
       const banker: Seat = prev.winner !== null ? (prev.winner as Seat) : prev.banker;
@@ -117,7 +130,7 @@ export function useGame() {
       let base = prev;
       if (prev.phase !== 'gameover' && prev.currentSeat === HUMAN_SEAT && prev.phase === 'discard') {
         const t = prev.players[HUMAN_SEAT].hand.find((x) => x.id === tileId);
-        base = pushHistory(prev, `出牌 ${t ? tileCode(t) : ''}`);
+        base = pushHistory(prev, `出牌 ${t ? tileName(t) : ''}`);
       }
       return discardTile(base, HUMAN_SEAT, tileId);
     });
@@ -128,7 +141,7 @@ export function useGame() {
       // 撤销前保存历史(仅在react模式下)
       let base = prev;
       if (prev.phase === 'react') {
-        base = pushHistory(prev, `${option.type} ${option.tile ? tileCode(option.tile) : ''}`);
+        base = pushHistory(prev, historyLabel(option, prev.qianggangVictim !== null));
       }
       // 人类抢杠胡 → 从剩余牌墙抽计分牌(在effect中结算)
       if (option.type === 'hu' && prev.qianggangVictim !== null) {
@@ -148,7 +161,7 @@ export function useGame() {
       // 撤销前保存历史(仅在self模式下且有selfActions)
       let base = prev;
       if (prev.phase === 'discard' && prev.currentSeat === HUMAN_SEAT && prev.selfActions.length > 0) {
-        base = pushHistory(prev, `${option.type} ${option.tile ? tileCode(option.tile) : ''}`);
+        base = pushHistory(prev, historyLabel(option, false));
       }
       // 人类自摸胡 → 从剩余牌墙抽计分牌(在effect中结算, 避免setState副作用)
       if (option.type === 'hu') {
@@ -208,6 +221,7 @@ export function useGame() {
   return {
     state,
     startGame,
+    startCustomGame,
     newRound,
     humanDiscard,
     humanReact,
