@@ -764,6 +764,14 @@
   align-items: center;
   gap: 2px;
 }
+.tile-pool-row-wild {
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: rgba(212,175,55,0.12);
+  border: 1px solid rgba(212,175,55,0.4);
+  border-radius: 8px;
+}
+.tile-pool-row-wild .tile-pool-count { color: var(--gold); font-weight: 700; }
 .tile-pool-item {
   display: flex;
   flex-direction: column;

@@ -3,7 +3,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { Tile as TileComp } from '../components/Tile';
 import { AdvisorScenarios } from '../components/AdvisorTab';
 import { analyzeHand, analyzePartialHand, codeName } from '../game/skillEngine';
-import { indexToTile, tileCode, tileName, SUIT_NAME, isHongZhong } from '../game/types';
+import { indexToTile, tileCode, tileName, SUIT_NAME, isHongZhong, HONGZHONG_CODE } from '../game/types';
 import { sortHand } from '../game/sort';
 import type { Tile, Suit } from '../game/types';
 import type { SkillAnalysis } from '../game/skillEngine';
@@ -23,11 +23,12 @@ const ALL_CODES: string[] = (() => {
   return codes;
 })();
 
-const ROWS: { label: string; codes: string[] }[] = [
+const ROWS: { label: string; codes: string[]; wild?: boolean }[] = [
+  { label: '百搭', codes: [HONGZHONG_CODE], wild: true },
   { label: '万', codes: ALL_CODES.slice(0, 9) },
   { label: '筒', codes: ALL_CODES.slice(9, 18) },
   { label: '条', codes: ALL_CODES.slice(18, 27) },
-  { label: '字', codes: ALL_CODES.slice(27, 34) },
+  { label: '字', codes: ALL_CODES.slice(27, 34).filter((c) => c !== HONGZHONG_CODE) },
 ];
 
 const SUIT_EMOJI: Record<string, string> = { m: '🀋', p: '🀚', s: '🀐', z: '🀀' };
@@ -397,7 +398,7 @@ export function Simulator({ onBack }: Props) {
       {phase === 'select' && (
         <div className="tile-pool">
           {ROWS.map((row) => (
-            <div key={row.label} className="tile-pool-row">
+            <div key={row.label} className={`tile-pool-row${row.wild ? ' tile-pool-row-wild' : ''}`}>
               <span style={{ width: 24, fontSize: 14, color: 'var(--gold)', alignSelf: 'flex-end', marginRight: 4, fontWeight: 600 }}>{row.label}</span>
               {row.codes.map((code) => {
                 const cnt = poolCounts[code];
